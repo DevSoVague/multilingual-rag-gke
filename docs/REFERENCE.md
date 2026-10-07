@@ -2,7 +2,7 @@
 
 A cloud-native, multilingual Retrieval-Augmented Generation (RAG) system deployed on Google Kubernetes Engine. Upload academic research PDFs across three domains, index them into a Milvus vector store, and ask questions in English, Spanish, French, or Italian - receiving grounded, hallucination-minimized answers with paper recommendations, all powered by Google Gemini and a LangGraph agent pipeline.
 
-> **Team:** Achintya Gahalaut, Devavrath Sandeep (CMU 14-825, Spring 2026)
+> **Team:** Achintya Gahalaut, Devavrath Sandeep (Carnegie Mellon University, Spring 2026)
 > **Project:** Option #1 - Research Assistant Agent with RAG Pipelines
 > **GCP Project:** `YOUR_PROJECT_ID` | **Region:** `us-central1` | **Cluster:** `milvus-gke`
 
@@ -681,8 +681,7 @@ kubectl rollout restart deployment/translator-deployment
 To run all services locally for development without GKE:
 
 ```bash
-# 1. Set required environment variables
-export GEMINI_API_KEY="your-key-here"
+# 1. Set required environment variables (GEMINI_API_KEY must already be exported in your shell)
 export TRANSLATOR_URL="http://127.0.0.1:8080"
 export MILVUS_URI="http://localhost:19530"
 

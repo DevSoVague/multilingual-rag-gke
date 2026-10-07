@@ -41,8 +41,8 @@ cd multilingual-rag-gke
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-cp .env.example .env          # fill in GEMINI_API_KEY (and MILVUS_URI if not localhost)
-set -a; source .env; set +a
+# export the environment variables listed in the table below
+# (at minimum GEMINI_API_KEY; MILVUS_URI if Milvus is not on localhost)
 
 # terminal 1: translator microservice
 uvicorn translator:app --host 127.0.0.1 --port 8080
@@ -105,7 +105,7 @@ More detail: [docs/PROJECT_TOUR.md](docs/PROJECT_TOUR.md) (overview and design d
 
 ## Team & credits
 
-Course project for CMU 14-825 (Spring 2026), Option 1: Research Assistant Agent with RAG Pipelines.
+Course project at Carnegie Mellon University (Spring 2026), Option 1: Research Assistant Agent with RAG Pipelines.
 Team of 2: Devavrath Sandeep (team lead) and Achintya Gahalaut.
 
 ## License
