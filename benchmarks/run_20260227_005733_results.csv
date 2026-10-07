@@ -1,0 +1,4 @@
+collection,end_to_end_sec,estimated_storage_mb,index_build_sec,method,n_chunks,notes,one_query_sec,paper_filter,raw_vector_mb,recommended_1,recommended_1_url,recommended_2,recommended_2_url,sample_query,storage_overhead_factor,top_k
+papers_rag_20260227_005733_hnsw,11.3875,10.632,5.3779,HNSW,648,,5.7253,None,7.594,AI_04_LLaMA_2.pdf,https://arxiv.org/abs/2307.09288,,,Summarize the main contribution of the papers and cite sources.,1.4,4
+papers_rag_20260227_005733_ivf_pq,11.1402,2.278,5.2414,IVF_PQ,648,,5.6136,None,7.594,AI_04_LLaMA_2.pdf,https://arxiv.org/abs/2307.09288,,,Summarize the main contribution of the papers and cite sources.,0.3,4
+papers_rag_20260227_005733_diskann,10.7701,9.872,5.1482,DiskANN,648,DiskANN support depends on Milvus build/version.,5.3363,None,7.594,AI_04_LLaMA_2.pdf,https://arxiv.org/abs/2307.09288,,,Summarize the main contribution of the papers and cite sources.,1.3,4

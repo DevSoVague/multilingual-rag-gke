@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-app-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rag-app
+  template:
+    metadata:
+      labels:
+        app: rag-app
+    spec:
+      containers:
+      - name: rag-app
+        # Make sure this matches your artifact registry path
+        image: us-central1-docker.pkg.dev/YOUR_PROJECT_ID/rag-project/app:v1
+        ports:
+        - containerPort: 8501
+        resources:
+          requests:
+            cpu: "250m" # Required for the HPA extra credit
+          limits:
+            cpu: "500m"
+        env:
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              # kubectl create secret generic gemini-api-key --from-literal=GEMINI_API_KEY=<your-key>
+              name: gemini-api-key
+              key: GEMINI_API_KEY
+        - name: MILVUS_URI
+          value: "http://milvus.milvus.svc.cluster.local:19530" 
+        - name: TRANSLATOR_URL
+          value: "http://translator-service.default.svc.cluster.local:8080"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rag-app-service
+spec:
+  selector:
+    app: rag-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8501
+  type: LoadBalancer
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: rag-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: rag-app-deployment
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

@@ -1,0 +1,16 @@
+# Dockerfile.translator
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install the dependencies your translator.py needs
+RUN pip install --no-cache-dir fastapi uvicorn deep-translator pydantic
+
+# Copy the translator code into the container
+COPY translator.py .
+
+# Expose the port uvicorn will run on
+EXPOSE 8080
+
+# Command to start the microservice
+CMD ["uvicorn", "translator:app", "--host", "0.0.0.0", "--port", "8080"]
