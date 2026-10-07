@@ -33,23 +33,29 @@ The Streamlit app hosts the whole UI (Upload & Index, Query, Stats & Benchmark t
 
 ## Quickstart (local)
 
-Requires Python 3.10+, a [Gemini API key](https://aistudio.google.com/app/apikey), and a Milvus instance (for local use, Milvus Standalone via Docker: see the [Milvus install guide](https://milvus.io/docs/install_standalone-docker-compose.md)).
+Requires Python 3.10+, a [Gemini API key](https://aistudio.google.com/app/apikey), and Docker (for Milvus). `make help` lists every target.
+
+**Option A: everything in Docker** (Milvus Standalone with etcd and MinIO, translator, app):
 
 ```bash
 git clone https://github.com/DevSoVague/multilingual-rag-gke.git
 cd multilingual-rag-gke
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-
-# export the environment variables listed in the table below
-# (at minimum GEMINI_API_KEY; MILVUS_URI if Milvus is not on localhost)
-
-# terminal 1: translator microservice
-uvicorn translator:app --host 127.0.0.1 --port 8080
-
-# terminal 2: the app
-streamlit run app.py          # http://localhost:8501
+export GEMINI_API_KEY=...
+docker compose up -d --build      # or: make up
+# app: http://localhost:8501   translator: http://localhost:8080/docs   Milvus: localhost:19530
 ```
+
+**Option B: app and translator from a venv, Milvus in Docker:**
+
+```bash
+make install                      # python3 -m venv .venv && pip install -r requirements.txt
+make milvus-up                    # docker compose up -d etcd minio milvus
+export GEMINI_API_KEY=...
+make translator                   # terminal 1: uvicorn translator:app on :8080
+make app                          # terminal 2: streamlit run app.py on :8501
+```
+
+Then, in the app: Upload & Index (pick PDFs, a domain label, and an index type: HNSW, IVF_PQ or DiskANN), ask questions in Query (answers can be requested in English, Spanish, French or Italian), and compare index types in Stats & Benchmark. `make papers` fetches the open-access sample corpus (see Data).
 
 | Variable | Purpose |
 |---|---|
@@ -57,18 +63,19 @@ streamlit run app.py          # http://localhost:8501
 | `MILVUS_URI`, `MILVUS_TOKEN` | Milvus endpoint (default `http://localhost:19530`) and optional token |
 | `MILVUS_COLLECTION` | Collection name (default `papers_rag`) |
 | `TRANSLATOR_URL` | Translator service (default `http://127.0.0.1:8080`) |
+| `PROJECT_ID`, `REGION`, `REPO`, `TAG` | GKE scripts only: GCP project, Artifact Registry region (default `us-central1`), repository (default `rag-project`), image tag (default `v1`) |
 
 ### Deploy on GKE
 
 ```bash
-cd infra/milvus-gke && terraform init && terraform apply -var="project_id=YOUR_PROJECT_ID" && cd ../..
-kubectl apply -f k8s/milvus-hpa.yaml
-# build images with Cloud Build (Dockerfile.app, Dockerfile.translator), set YOUR_PROJECT_ID in k8s/*.yaml
-kubectl create secret generic gemini-api-key --from-literal=GEMINI_API_KEY="<your-key>"
-kubectl apply -f k8s/translator.yaml -f k8s/app.yaml
+export PROJECT_ID=my-gcp-project GEMINI_API_KEY=...
+make infra                        # Terraform: GKE cluster + Milvus/Attu via Helm (infra/milvus-gke)
+gcloud container clusters get-credentials milvus-gke --zone us-central1-a
+make build-push                   # scripts/build_push.sh: Cloud Build both images into Artifact Registry
+make deploy                       # scripts/deploy_gke.sh: secret, Milvus HPA, translator, app (prints the external IP)
 ```
 
-Full step-by-step guide (IAM, Artifact Registry, Cloud Build, verification): [docs/GKE_DEPLOYMENT_GUIDE.md](docs/GKE_DEPLOYMENT_GUIDE.md). The 2-node n2-standard-4 cluster costs roughly $0.38/hr per the original deployment notes; run `terraform destroy` when done.
+`scripts/build_push.sh --local` builds with local `docker buildx` (linux/amd64) instead of Cloud Build. The manifests in `k8s/` keep a `YOUR_PROJECT_ID` placeholder; `deploy_gke.sh` renders a substituted copy at deploy time. Full step-by-step guide (IAM, Artifact Registry, Cloud Build, verification): [docs/GKE_DEPLOYMENT_GUIDE.md](docs/GKE_DEPLOYMENT_GUIDE.md). The 2-node n2-standard-4 cluster costs roughly $0.38/hr per the original deployment notes; run `terraform destroy` when done.
 
 ## Data
 
@@ -94,9 +101,11 @@ At this corpus size the three indexes land within about 0.4 s of each other per 
 ├── indexer.py              # PDFIndexer: chunking, Gemini embeddings, Milvus, LangGraph agent
 ├── translator.py           # FastAPI translation microservice (EN/ES/FR/IT)
 ├── Dockerfile.app / Dockerfile.translator
+├── docker-compose.yml      # local stack: Milvus Standalone (etcd, MinIO) + translator + app
+├── Makefile                # install, milvus-up, translator, app, up, infra, build-push, deploy
 ├── k8s/                    # Deployments, Services, HPAs (app, translator, Milvus)
 ├── infra/milvus-gke/       # Terraform: GKE cluster + Milvus/Attu via Helm
-├── scripts/                # download_papers.sh, validate_papers.py
+├── scripts/                # build_push.sh, deploy_gke.sh, download_papers.sh, validate_papers.py
 ├── benchmarks/             # saved index benchmark result
 └── docs/                   # deployment guide, workflow, project tour, full reference
 ```
